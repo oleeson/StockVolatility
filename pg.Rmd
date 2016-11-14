@@ -1,0 +1,78 @@
+---
+title: "Proctor and Gamble Stock Volatility"
+author: "Olivia Leeson"
+date: "November 13, 2016"
+output: 
+  html_document:
+    keep md: TRUE
+---
+
+## What are we doing?
+This document shows how to download financial data using the tseries library and how to calculate stock returns and volatility. 
+
+###Let's get Started
+First we download our data for the stock of Proctor and Gamble from Yahoo! Finance. 
+```{r}
+#download tseries using download.packages("tseries") if not already installed
+#call tseries library
+library(tseries)
+#uplaod data on PG stock at close
+pgdata <- get.hist.quote('pg', quote="Close")
+```
+
+Now that we have our data downloaded, we want to calculate the returns and check how many historical observations we have available. 
+```{r}
+#calculate the day over day historical returns
+pgreturn <- log(lag(pgdata)) - log(pgdata)
+length(pgreturn)
+
+```
+It looks like we have 6518 returns to analyze. 
+  
+
+Next let's calculate the stocks' average volatility
+```{r}
+#find volatility. standard deviation of pgreturn times square root of 250
+#250 is number of trading days/year
+pgvol <- sd(pgreturn)*sqrt(250)*100
+pgvol
+```
+The average volatility of Proctor and Gamble's stock is 32.75
+
+##Now it's Time to Graph 
+
+We are graphing estimated volatility for our Proctor and Gamble stock given varying values weights given to past volatilites. 
+
+First we create our function that calculates volatility: 
+```{r}
+vol <- function(d, logrets){
+  var=0
+  lam=0
+  varlist<- c()
+  for (r in logrets){
+    lam=lam*(1-1/d) +1
+  var = (1 - 1/lam)*var + (1/lam)*r^2
+    varlist <-c(varlist,var)
+  }
+  sqrt(varlist)
+}
+```
+
+
+```{r}
+#estimate volatility for varying ds, or weights
+#gives high weight to past volatility
+volest <-vol(10,pgreturn)
+#gives medium weight to past volatility
+volest2 <-vol(30,pgreturn)
+#gives low weight to past volatility
+volest3 <-vol(100,pgreturn)
+```
+
+From our graph we see that the lower the weight valued on past volatility, the smoother the volatility graph is with lower peaks.
+```{r}
+#plot volatilities 
+plot(volest,type="l", col = "pink4")
+lines(volest2, type="l", col="lightgreen")
+lines(volest3, type="l", col="lightblue")
+```
